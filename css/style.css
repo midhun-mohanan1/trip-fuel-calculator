@@ -93,3 +93,27 @@ input[type="text"], input[type="number"] {
     .btn, header, .global-actions, .card:not(#results-section) { display: none !important; }
     #results-section { box-shadow: none; padding: 0; }
 }
+
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --secondary: #334155;
+    --secondary-hover: #475569;
+}
+
+body.dark-mode input[type="text"], 
+body.dark-mode input[type="number"] {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    border-color: var(--border);
+}
+
+body.dark-mode .segment-card, 
+body.dark-mode .list-item {
+    background-color: var(--card-bg);
+}
