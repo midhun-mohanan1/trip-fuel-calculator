@@ -4,15 +4,9 @@ import { calculateExpenses } from './calculator.js';
 
 // Initial State
 let state = {
-    tripName: '',
-    mileage: 15,
-    fuelPrice: 105.5,
-    passengers: [],
-    driverId: null,
-    driverPays: true,
-    stops: [],
-    segments: [],
-    splitMode: 'segment'
+    tripName: '', mileage: 15, fuelPrice: 105.5,
+    passengers: [], driverId: null, driverPays: true,
+    stops: [], segments: [], splitMode: 'segment'
 };
 
 // DOM Elements
@@ -33,14 +27,20 @@ const ui = {
     splitModeRadios: document.getElementsByName('split-mode'),
     btnSave: document.getElementById('btn-save'),
     btnReset: document.getElementById('btn-reset'),
-    btnExportCsv: document.getElementById('btn-export-csv'),
-    btnPrint: document.getElementById('btn-print')
+    btnPrint: document.getElementById('btn-print'),
+    themeToggle: document.getElementById('theme-toggle')
 };
 
-// Initialization
 function init() {
     const saved = loadTrip();
     if (saved) state = { ...state, ...saved };
+    
+    // Theme setup
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        ui.themeToggle.checked = true;
+    }
+    
     bindEvents();
     render();
 }
@@ -68,19 +68,25 @@ function bindEvents() {
     });
 
     ui.btnPrint.addEventListener('click', () => window.print());
-    ui.btnExportCsv.addEventListener('click', exportCSV);
+    
+    ui.themeToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+    });
 }
 
-// Passengers
 function addPassenger() {
     const name = ui.newPassengerName.value.trim();
     if (!name) return;
     const id = 'p_' + Date.now();
     state.passengers.push({ id, name });
-    if (!state.driverId) state.driverId = id; // First passenger defaults to driver
+    if (!state.driverId) state.driverId = id; 
     ui.newPassengerName.value = '';
-    
-    // Add passenger to all existing segments by default
     state.segments.forEach(seg => seg.passengers.push(id));
     render();
 }
@@ -88,23 +94,16 @@ function addPassenger() {
 function removePassenger(id) {
     state.passengers = state.passengers.filter(p => p.id !== id);
     if (state.driverId === id) state.driverId = state.passengers.length ? state.passengers[0].id : null;
-    state.segments.forEach(seg => {
-        seg.passengers = seg.passengers.filter(pId => pId !== id);
-    });
+    state.segments.forEach(seg => seg.passengers = seg.passengers.filter(pId => pId !== id));
     render();
 }
 
-function setDriver(id) {
-    state.driverId = id;
-    render();
-}
+function setDriver(id) { state.driverId = id; render(); }
 
-// Stops & Segments
 function addStop() {
     const name = ui.newStopName.value.trim();
     if (!name) return;
-    const id = 'stop_' + Date.now();
-    state.stops.push({ id, name });
+    state.stops.push({ id: 'stop_' + Date.now(), name });
     ui.newStopName.value = '';
     rebuildSegments();
     render();
@@ -119,12 +118,8 @@ function removeStop(index) {
 function rebuildSegments() {
     const newSegments = [];
     for (let i = 0; i < state.stops.length - 1; i++) {
-        const origin = state.stops[i].name;
-        const dest = state.stops[i+1].name;
-        
-        // Try to retain data from old segment with same origin/dest
+        const origin = state.stops[i].name, dest = state.stops[i+1].name;
         const existing = state.segments.find(s => s.origin === origin && s.dest === dest);
-        
         newSegments.push({
             id: `seg_${i}`, origin, dest,
             distance: existing ? existing.distance : 0,
@@ -134,53 +129,48 @@ function rebuildSegments() {
     state.segments = newSegments;
 }
 
-// Rendering
 function render() {
     ui.tripName.value = state.tripName;
     ui.mileage.value = state.mileage;
     ui.fuelPrice.value = state.fuelPrice;
     ui.driverPays.checked = state.driverPays;
-    
     document.querySelector(`input[name="split-mode"][value="${state.splitMode}"]`).checked = true;
 
-    // Render Passengers
     ui.passengersList.innerHTML = state.passengers.map(p => `
         <div class="list-item">
             <div>
                 <strong>${p.name}</strong> 
                 ${p.id === state.driverId ? '<span class="driver-badge">Driver</span>' : ''}
             </div>
-            <div>
-                ${p.id !== state.driverId ? `<button class="btn btn-secondary btn-sm" onclick="app.setDriver('${p.id}')">Make Driver</button>` : ''}
-                <button class="btn btn-danger btn-sm" onclick="app.removePassenger('${p.id}')">X</button>
+            <div style="display:flex; gap:0.5rem;">
+                ${p.id !== state.driverId ? `<button class="btn btn-secondary btn-danger" style="color:var(--primary); background:var(--input-bg);" onclick="app.setDriver('${p.id}')">Make Driver</button>` : ''}
+                <button class="btn btn-danger" onclick="app.removePassenger('${p.id}')">Remove</button>
             </div>
         </div>
     `).join('');
 
-    // Render Stops
     ui.stopsList.innerHTML = state.stops.map((stop, i) => `
         <div class="list-item">
-            <span>${i + 1}. ${stop.name}</span>
-            <button class="btn btn-danger btn-sm" onclick="app.removeStop(${i})">X</button>
+            <span style="font-weight: 500;">${i + 1}. ${stop.name}</span>
+            <button class="btn btn-danger" onclick="app.removeStop(${i})">Remove</button>
         </div>
     `).join('');
 
-    // Render Segments
     ui.segmentsList.innerHTML = state.segments.length ? state.segments.map((seg, i) => `
         <div class="segment-card">
             <div class="segment-header">
-                <span>Segment ${i+1}: ${seg.origin} ➔ ${seg.dest}</span>
-                <a href="${getMapsUrl(seg.origin, seg.dest)}" target="_blank" class="maps-link">Check in Maps ↗</a>
+                <span>${seg.origin} ➔ ${seg.dest}</span>
+                <a href="${getMapsUrl(seg.origin, seg.dest)}" target="_blank" class="maps-link">Maps ↗</a>
             </div>
             <div class="segment-actions">
-                <label>Distance (km): 
-                    <input type="number" min="0" step="0.1" value="${seg.distance}" onchange="app.updateDistance('${seg.id}', this.value)">
+                <label style="flex-grow: 1;">Distance (km)
+                    <input type="number" min="0" step="0.1" value="${seg.distance}" onchange="app.updateDistance('${seg.id}', this.value)" style="margin-top: 0.25rem;">
                 </label>
             </div>
             <div class="passenger-checkboxes">
-                <strong>Travelling:</strong>
+                <div style="width: 100%; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">Passengers Travelling</div>
                 ${state.passengers.map(p => `
-                    <label>
+                    <label class="checkbox-label">
                         <input type="checkbox" ${seg.passengers.includes(p.id) ? 'checked' : ''} onchange="app.toggleSegmentPassenger('${seg.id}', '${p.id}', this.checked)">
                         ${p.name}
                     </label>
@@ -190,13 +180,9 @@ function render() {
     `).join('') : '<p class="help-text">Add at least two stops to generate route segments.</p>';
 }
 
-// Global functions for inline HTML events
 window.app = {
     removePassenger, setDriver, removeStop,
-    updateDistance: (segId, val) => {
-        const seg = state.segments.find(s => s.id === segId);
-        if (seg) seg.distance = parseFloat(val) || 0;
-    },
+    updateDistance: (segId, val) => { const seg = state.segments.find(s => s.id === segId); if (seg) seg.distance = parseFloat(val) || 0; },
     toggleSegmentPassenger: (segId, pId, isChecked) => {
         const seg = state.segments.find(s => s.id === segId);
         if (isChecked) seg.passengers.push(pId);
@@ -204,74 +190,49 @@ window.app = {
     }
 };
 
-// Calculate and Results display
 function generateResults() {
-    if (state.passengers.length === 0 || state.segments.length === 0) {
-        alert("Please add passengers and route stops first.");
-        return;
-    }
+    if (state.passengers.length === 0 || state.segments.length === 0) return alert("Please add passengers and route stops first.");
     
     const results = calculateExpenses(state);
     ui.resultsSection.classList.remove('hidden');
     ui.resultsSection.scrollIntoView({ behavior: 'smooth' });
 
-    // Summary
     document.getElementById('results-summary').innerHTML = `
         <div>
-            <p><strong>Total Distance:</strong> ${results.totalDistance.toFixed(1)} km</p>
-            <p><strong>Fuel Consumed:</strong> ${results.totalFuel.toFixed(2)} L</p>
+            <p>Total Distance <strong>${results.totalDistance.toFixed(1)} km</strong></p>
+            <p>Fuel Consumed <strong>${results.totalFuel.toFixed(2)} L</strong></p>
         </div>
         <div>
-            <p><strong>Total Cost:</strong> ₹${results.totalCost.toFixed(2)}</p>
-            <p><strong>Passengers:</strong> ${state.passengers.length}</p>
+            <p>Total Cost <strong>₹${results.totalCost.toFixed(2)}</strong></p>
+            <p>Passengers <strong>${state.passengers.length}</strong></p>
         </div>
     `;
 
-    // Per Person
     document.getElementById('results-passengers').innerHTML = state.passengers.map(p => {
         const data = results.passengers[p.id];
         const pct = results.totalCost > 0 ? ((data.cost / results.totalCost) * 100).toFixed(1) : 0;
         return `
             <div class="result-row">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong>${p.name}</strong>
-                    <span class="amount">₹${data.cost.toFixed(2)}</span>
+                <div>
+                    <div style="font-weight: 600; font-size: 1.1rem;">${p.name}</div>
+                    <div class="help-text" style="margin-bottom: 0; font-size: 0.85rem;">
+                        ${state.splitMode === 'segment' ? `${data.distance.toFixed(1)} km (${pct}%)` : 'Equal split share'}
+                    </div>
                 </div>
-                <div class="help-text">
-                    ${state.splitMode === 'segment' ? `Travelled ${data.distance.toFixed(1)} km (${pct}% of total)` : 'Equal split share'}
-                </div>
+                <div class="amount">₹${data.cost.toFixed(2)}</div>
             </div>
         `;
     }).join('');
 
-    // Segment Breakdown
     document.getElementById('results-segments').innerHTML = results.segments.map((seg, i) => `
-        <div class="result-row">
-            <strong>Seg ${i+1}: ${seg.origin} ➔ ${seg.dest}</strong> (${seg.distance} km)
-            <div>Segment Cost: ₹${seg.cost.toFixed(2)}</div>
-            <div class="help-text">Split between ${seg.contributors.length} person(s): ₹${seg.costPerPerson.toFixed(2)} each</div>
+        <div class="segment-result-row">
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">${seg.origin} ➔ ${seg.dest} <span style="font-weight:normal; color:var(--text-muted);">(${seg.distance} km)</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="help-text" style="margin:0;">Split by ${seg.contributors.length} person(s)</div>
+                <div style="font-weight:600;">₹${seg.costPerPerson.toFixed(2)} each</div>
+            </div>
         </div>
     `).join('');
 }
 
-// CSV Export
-function exportCSV() {
-    const results = calculateExpenses(state);
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Passenger,Total Distance (km),Amount Owed (INR)\n";
-    state.passengers.forEach(p => {
-        const data = results.passengers[p.id];
-        csvContent += `"${p.name}",${data.distance},${data.cost.toFixed(2)}\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "trip_expenses.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Start app
 init();
