@@ -33,7 +33,6 @@ const ui = {
     splitModeRadios: document.getElementsByName('split-mode'),
     btnSave: document.getElementById('btn-save'),
     btnReset: document.getElementById('btn-reset'),
-    btnExportCsv: document.getElementById('btn-export-csv'),
     btnPrint: document.getElementById('btn-print')
 };
 
@@ -68,7 +67,6 @@ function bindEvents() {
     });
 
     ui.btnPrint.addEventListener('click', () => window.print());
-    ui.btnExportCsv.addEventListener('click', exportCSV);
 }
 
 // Passengers
@@ -254,24 +252,7 @@ function generateResults() {
     `).join('');
 }
 
-// CSV Export
-function exportCSV() {
-    const results = calculateExpenses(state);
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Passenger,Total Distance (km),Amount Owed (INR)\n";
-    state.passengers.forEach(p => {
-        const data = results.passengers[p.id];
-        csvContent += `"${p.name}",${data.distance},${data.cost.toFixed(2)}\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "trip_expenses.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+
 
 // Start app
 init();
@@ -279,17 +260,15 @@ init();
 // Theme Toggle Logic
 const themeToggle = document.getElementById('theme-toggle');
 
-// Check for saved theme on load
 if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark-mode');
-    themeToggle.textContent = '☀️ Light Mode';
+    themeToggle.textContent = '☀️';
 }
 
-// Toggle on click
 themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
     const isDark = document.body.classList.contains('dark-mode');
     
-    themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
 });
