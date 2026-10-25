@@ -2,33 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shared Trip Fuel Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trip Expenses</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
-        <div class="container">
-            <h1>Trip Fuel Calculator</h1>
-            <p>Fairly split road trip fuel costs based on who travelled where.</p>
+        <div class="container header-container">
+            <div>
+                <h1>Trip Expenses</h1>
+                <p>Fair split calculator</p>
+            </div>
+            <label class="ios-switch" aria-label="Toggle Dark Mode">
+                <input type="checkbox" id="theme-toggle">
+                <span class="ios-slider"></span>
+            </label>
         </div>
     </header>
 
     <main class="container">
         <!-- Trip Details -->
         <section class="card" id="trip-details-section">
-            <h2>1. Trip & Vehicle Details</h2>
+            <h2>1. Trip Details</h2>
             <div class="form-group">
                 <label for="trip-name">Trip Name</label>
-                <input type="text" id="trip-name" placeholder="e.g., Kerala Road Trip">
+                <input type="text" id="trip-name" placeholder="e.g., Weekend Getaway">
             </div>
             <div class="grid-2">
                 <div class="form-group">
-                    <label for="mileage">Vehicle Mileage (km/litre)</label>
+                    <label for="mileage">Mileage (km/L)</label>
                     <input type="number" id="mileage" min="1" step="0.1" value="15">
                 </div>
                 <div class="form-group">
-                    <label for="fuel-price">Fuel Price (₹/litre)</label>
+                    <label for="fuel-price">Fuel Price (₹/L)</label>
                     <input type="number" id="fuel-price" min="1" step="0.1" value="105.5">
                 </div>
             </div>
@@ -37,14 +43,14 @@
         <!-- Passengers -->
         <section class="card" id="passengers-section">
             <h2>2. Passengers</h2>
-            <p class="help-text">Add everyone travelling. You can select who is driving.</p>
+            <p class="help-text">Add everyone travelling. Select who is driving.</p>
             <div id="passengers-list"></div>
             <div class="add-row">
                 <input type="text" id="new-passenger-name" placeholder="Passenger Name">
                 <button type="button" id="btn-add-passenger" class="btn btn-secondary">Add</button>
             </div>
             <div class="driver-settings">
-                <label>
+                <label class="checkbox-label">
                     <input type="checkbox" id="driver-pays" checked>
                     Driver contributes to fuel cost
                 </label>
@@ -54,7 +60,7 @@
         <!-- Stops -->
         <section class="card" id="stops-section">
             <h2>3. Route Stops</h2>
-            <p class="help-text">Add your stops in order (e.g., Kollam -> Ettumanoor -> Kochi).</p>
+            <p class="help-text">Add stops in order (e.g., Kollam ➔ Ettumanoor).</p>
             <div id="stops-list"></div>
             <div class="add-row">
                 <input type="text" id="new-stop-name" placeholder="City or Location">
@@ -65,38 +71,39 @@
         <!-- Segments -->
         <section class="card" id="segments-section">
             <h2>4. Route Segments</h2>
-            <p class="help-text">Enter distances and select who travelled on each segment.</p>
+            <p class="help-text">Enter distances and select who travelled where.</p>
             <div id="segments-list"></div>
         </section>
 
         <!-- Calculation Settings & Actions -->
-        <section class="card text-center">
+        <section class="card text-center" style="background: transparent; box-shadow: none; padding: 0;">
             <div class="form-group inline-radio">
-                <label><input type="radio" name="split-mode" value="segment" checked> Segment-based (Fair)</label>
-                <label><input type="radio" name="split-mode" value="equal"> Equal Split</label>
+                <label class="radio-label"><input type="radio" name="split-mode" value="segment" checked> Fair Split</label>
+                <label class="radio-label"><input type="radio" name="split-mode" value="equal"> Equal Split</label>
             </div>
             <button type="button" id="btn-calculate" class="btn btn-primary btn-large">Calculate Expenses</button>
         </section>
 
         <!-- Results Dashboard -->
         <section class="card hidden" id="results-section">
-            <h2>Results Dashboard</h2>
+            <h2 style="border: none; font-size: 1.5rem; text-align: center;">Results</h2>
             <div id="results-summary" class="results-summary grid-2"></div>
-            <h3>Per Person Breakdown</h3>
+            
+            <h3 class="section-subtitle">Per Person Breakdown</h3>
             <div id="results-passengers"></div>
-            <h3>Segment Breakdown</h3>
+            
+            <h3 class="section-subtitle">Segment Breakdown</h3>
             <div id="results-segments"></div>
             
             <div class="action-buttons">
-                <button type="button" id="btn-export-csv" class="btn btn-secondary">Export to CSV</button>
-                <button type="button" id="btn-print" class="btn btn-secondary">Print Summary</button>
+                <button type="button" id="btn-print" class="btn btn-secondary" style="width: 100%;">Print Summary</button>
             </div>
         </section>
 
         <!-- Global Actions -->
         <div class="global-actions">
             <button type="button" id="btn-save" class="btn btn-text">Save Trip</button>
-            <button type="button" id="btn-reset" class="btn btn-text text-danger">Reset All</button>
+            <button type="button" id="btn-reset" class="btn btn-text text-danger">Reset Data</button>
         </div>
     </main>
 
